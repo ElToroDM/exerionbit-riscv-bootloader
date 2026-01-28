@@ -1,0 +1,22 @@
+# Build artifacts
+obj/
+build/
+*.elf
+*.bin
+*.map
+*.o
+
+# Python tools cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS specific
+.DS_Store
+Thumbs.db
