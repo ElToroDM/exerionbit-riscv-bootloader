@@ -60,3 +60,5 @@ To port the bootloader:
 
 ## Professional Use
 This code is written following C99 standards, with no dynamic allocation or interrupts, making it suitable for safety-critical or high-reliability applications where auditability is key.
+
+Licensed under MIT – see LICENSE.
