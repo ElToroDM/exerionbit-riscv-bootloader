@@ -1,4 +1,7 @@
-# Professional RISC-V UART Bootloader - Makefile
+#===============================================================================
+# RISC-V UART Bootloader - Makefile
+# Builds bootloader for QEMU virt by default
+#===============================================================================
 
 # Toolchain
 CROSS_COMPILE ?= riscv64-unknown-elf-
