@@ -4,7 +4,8 @@
 #===============================================================================
 
 # Toolchain
-CROSS_COMPILE ?= riscv64-unknown-elf-
+# Try riscv-none-elf- first (xPack), fallback to riscv64-unknown-elf-
+CROSS_COMPILE ?= riscv-none-elf-
 CC = $(CROSS_COMPILE)gcc
 OBJCOPY = $(CROSS_COMPILE)objcopy
 OBJDUMP = $(CROSS_COMPILE)objdump
@@ -50,16 +51,34 @@ $(TARGET): $(OBJS)
 	@echo "Build complete: $@"
 
 $(OBJ_DIR)/%.o: %.c
+ifeq ($(OS),Windows_NT)
+	@powershell -Command "New-Item -ItemType Directory -Force -Path '$(subst /,\,$(dir $@))' | Out-Null"
+else
 	@mkdir -p $(dir $@)
+endif
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJ_DIR)/%.o: %.S
+ifeq ($(OS),Windows_NT)
+	@powershell -Command "New-Item -ItemType Directory -Force -Path '$(subst /,\,$(dir $@))' | Out-Null"
+else
 	@mkdir -p $(dir $@)
+endif
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
+ifeq ($(OS),Windows_NT)
+	@if exist $(OBJ_DIR) rmdir /S /Q $(OBJ_DIR)
+	@if exist $(TARGET) del /Q $(TARGET)
+	@if exist $(BINARY) del /Q $(BINARY)
+else
 	rm -rf $(OBJ_DIR) $(TARGET) $(BINARY)
+endif
 
 # Helper to run in QEMU (bare-metal virt machine)
 qemu: $(TARGET)
+ifeq ($(OS),Windows_NT)
+	"C:\Program Files\qemu\qemu-system-riscv32.exe" -M virt -display none -serial stdio -bios none -kernel $(TARGET)
+else
 	qemu-system-riscv32 -M virt -display none -serial stdio -bios none -kernel $(TARGET)
+endif
