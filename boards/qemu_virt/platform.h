@@ -9,6 +9,7 @@
  */
 
 /* Memory Map - Adjust for your target hardware */
+/* NOTE: These addresses reflect the QEMU virt memory map used for testing. */
 #define FLASH_BASE          0x80000000
 #define APP_BASE            0x80010000
 #define FLASH_SIZE          (64 * 1024)

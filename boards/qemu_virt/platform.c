@@ -5,7 +5,7 @@
  * 
  * Hardware: QEMU RISC-V 'virt' machine
  * UART: 16550A compatible at 0x10000000
- * 
+ *
  * PORTING NOTES:
  * - Real hardware will need clock/PLL init in platform_early_init()
  * - Flash operations here are simplified (direct RAM access)
@@ -15,7 +15,7 @@
 
 #define UART0_BASE 0x10000000
 
-/* Use explicit volatile cast to prevent compiler optimizations on register pooling */
+/* Use explicit volatile cast to prevent compiler optimizations on register polling */
 #define UART_REG(r) (*(volatile uint8_t *)(UART0_BASE + (r)))
 
 #define UART_THR 0
@@ -35,13 +35,13 @@
 void platform_early_init(void) {
     /* 
      * Early hardware setup - called before BSS clear
-     * 
+     *
      * For real hardware, add here:
      * - System clock/PLL configuration
      * - Power domain enablement
      * - Watchdog disable (if needed for long flash operations)
      * - Critical GPIO configuration
-     * 
+     *
      * QEMU: No clock setup needed
      */
 }
@@ -53,7 +53,7 @@ void platform_early_init(void) {
 void platform_uart_init(void) {
     /* 
      * 16550A UART Initialization
-     * 
+     *
      * For real hardware with different UART:
      * - Configure baudrate generator
      * - Set data format (8N1)
@@ -66,13 +66,13 @@ void platform_uart_init(void) {
 }
 
 void platform_uart_putc(char c) {
-    /* Wait for TX to be empty */
+    /* Wait for TX to be idle before writing a character */
     while (!(UART_REG(UART_LSR) & UART_LSR_TX_IDLE));
     UART_REG(UART_THR) = (uint8_t)c;
 }
 
 char platform_uart_getc(void) {
-    /* Wait for RX to be ready */
+    /* Blocking read: wait until RX data available then return it */
     while (!(UART_REG(UART_LSR) & UART_LSR_RX_READY));
     return (char)UART_REG(UART_RBR);
 }
@@ -84,14 +84,14 @@ char platform_uart_getc(void) {
 int platform_flash_write(uint32_t addr, const void *data, size_t size) {
     /*
      * QEMU: Direct memory write (RAM-backed)
-     * 
+     *
      * For real SPI/embedded flash:
      * 1. Send write enable command
      * 2. Wait for flash ready (WIP bit)
      * 3. Write data in page-aligned chunks (typically 256 bytes)
      * 4. Poll status register until write completes
      * 5. Verify if critical
-     * 
+     *
      * Requirements:
      * - addr must be aligned to flash page size
      * - size should be multiple of page size (or handle partial pages)
@@ -101,6 +101,8 @@ int platform_flash_write(uint32_t addr, const void *data, size_t size) {
     uint8_t *dest = (uint8_t *)(uintptr_t)addr;
     const uint8_t *src = (const uint8_t *)data;
     for (size_t i = 0; i < size; i++) {
+        /* Per-byte write; QEMU allows direct memory writes. Real flash needs
+         * page-oriented logic and status checks. */
         dest[i] = src[i];
     }
     return 0;
@@ -109,24 +111,24 @@ int platform_flash_write(uint32_t addr, const void *data, size_t size) {
 int platform_flash_erase(uint32_t addr, size_t size) {
     /*
      * QEMU: Fill with 0xFF (simulated erase)
-     * 
+     *
      * For real SPI/embedded flash:
      * 1. Send write enable command
      * 2. Send sector/block erase command
      * 3. Wait for erase complete (can take ms to seconds)
      * 4. Repeat for each sector in range
-     * 
+     *
      * Requirements:
      * - addr must be sector-aligned (typical: 4KB sectors)
      * - size must be multiple of sector size
      * - May need to disable watchdog for large erases
      * - Consider feeding watchdog between sectors
-     * 
+     *
      * Typical sector sizes: 4KB (uniform) or mixed (4KB + 32KB + 64KB)
      */
     uint8_t *dest = (uint8_t *)(uintptr_t)addr;
     for (size_t i = 0; i < size; i++) {
-        dest[i] = 0xFF;
+        dest[i] = 0xFF; /* Simulated erase value */
     }
     return 0;
 }
@@ -138,12 +140,12 @@ int platform_flash_erase(uint32_t addr, size_t size) {
 void platform_reset(void) {
     /*
      * QEMU: Write to test device for poweroff
-     * 
+     *
      * For real hardware:
      * - Use watchdog reset
      * - Or write to system reset register
      * - Or call ROM bootloader function
-     * 
+     *
      * Example for typical MCU:
      * SYSRESET->CTRL = RESET_KEY | RESET_REQ;
      */
