@@ -1,0 +1,30 @@
+name: Build Bootloader
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install RISC-V toolchain
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-riscv64-unknown-elf binutils-riscv64-unknown-elf make
+
+      - name: Build bootloader
+        env:
+          CROSS_COMPILE: riscv64-unknown-elf-
+        run: make clean && make
+
+      - name: Check build artifacts
+        run: |
+          test -f bootloader.elf && echo "✓ bootloader.elf" || echo "✗ bootloader.elf not found"
+          test -f bootloader.bin && echo "✓ bootloader.bin" || echo "✗ bootloader.bin not found"
