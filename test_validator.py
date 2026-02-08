@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-RISC-V Bootloader UART Protocol Test & Validation
-Validates: handshake, firmware upload, CRC32, error handling
-"""
+"""RISC-V Bootloader UART Protocol Test & Validation"""
 import subprocess
 import time
 import sys
@@ -12,15 +9,14 @@ import os
 import shutil
 from binascii import crc32
 
-# ANSI color codes
+# Constants
+FIRMWARE_SIZE = 1024
+PROGRESS_BAR_DELAY = 0.2  # Show progress bar only after 0.2 secs
+PROGRESS_BAR_MIN_DURATION = 0.5  # Only if it will take more than 2 secs
+
+# ANSI colors
 class C:
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    CYAN = '\033[96m'
-    BOLD = '\033[1m'
-    END = '\033[0m'
+    GREEN, RED, CYAN, BOLD, END = '\033[92m', '\033[91m', '\033[96m', '\033[1m', '\033[0m'
 
 def step(num, total, msg):
     print(f"{C.BOLD}[{num}/{total}]{C.END} {C.CYAN}{msg}{C.END}")
@@ -31,48 +27,77 @@ def ok(msg):
 def fail(msg):
     print(f"  {C.RED}✗{C.END}  {msg}")
 
-def info(msg):
-    print(f"  {C.YELLOW}→{C.END}  {msg}")
+# Progress tracking globals
+_progress_start_time = None
+_progress_shown = False
 
-def progress(curr, total):
-    width = 30
-    done = int(width * curr / total)
-    bar = '█' * done + '░' * (width - done)
-    pct = 100 * curr / total
-    print(f"\r  [{bar}] {pct:5.1f}%", end='', flush=True)
+def progress(curr, total, byte_delay=0.0003):
+    global _progress_start_time, _progress_shown
+    
+    # Initialize on first call
+    if curr == 0 or _progress_start_time is None:
+        _progress_start_time = time.time()
+        _progress_shown = False
+    
+    estimated_total_time = total * byte_delay
+    elapsed = time.time() - _progress_start_time
+    
+    # Only show if estimated time > PROGRESS_BAR_MIN_DURATION and elapsed > PROGRESS_BAR_DELAY
+    if estimated_total_time > PROGRESS_BAR_MIN_DURATION and elapsed > PROGRESS_BAR_DELAY:
+        _progress_shown = True
+        width = 30
+        done = int(width * curr / total)
+        bar = '█' * done + '░' * (width - done)
+        pct = 100 * curr / total
+        print(f"\r  [{bar}] {pct:5.1f}%", end='', flush=True)
+    
+    if curr >= total:
+        if _progress_shown:
+            print("\r" + " " * 50 + "\r", end="")
+        _progress_start_time = None
+        _progress_shown = False
+
+def animated_wait(duration):
+    """Show progress bar while waiting"""
+    start = time.time()
+    show_progress = duration > PROGRESS_BAR_MIN_DURATION
+    progress_started = False
+    
+    while time.time() - start < duration:
+        elapsed = time.time() - start
+        
+        # Only show progress if duration > PROGRESS_BAR_MIN_DURATION and elapsed > PROGRESS_BAR_DELAY
+        if show_progress and elapsed > PROGRESS_BAR_DELAY:
+            progress_started = True
+            pct = min(100, int(100 * elapsed / duration))
+            bar_width = 30
+            filled = int(bar_width * elapsed / duration)
+            bar = '█' * filled + '░' * (bar_width - filled)
+            print(f"\r  [{bar}] {pct:5.1f}%", end='', flush=True)
+        
+        time.sleep(0.05)
+    
+    if progress_started:
+        print("\r" + " " * 50 + "\r", end="")
 
 def find_qemu():
-    """Find QEMU executable in PATH or common install locations"""
-    exe_name = "qemu-system-riscv32"
+    """Find QEMU executable"""
+    exe = "qemu-system-riscv32" + (".exe" if sys.platform.startswith('win') else "")
+    qemu = shutil.which(exe)
+    if qemu:
+        return qemu
     if sys.platform.startswith('win'):
-        exe_name += ".exe"
-    
-    # Try PATH first
-    qemu_path = shutil.which(exe_name)
-    if qemu_path:
-        return qemu_path
-    
-    # Windows fallback locations
-    if sys.platform.startswith('win'):
-        common_paths = [
-            r"C:\Program Files\qemu\qemu-system-riscv32.exe",
-            r"C:\Program Files (x86)\qemu\qemu-system-riscv32.exe",
-            r"C:\qemu\qemu-system-riscv32.exe",
-        ]
-        for path in common_paths:
-            if os.path.exists(path):
-                return path
+        for path in [r"C:\Program Files\qemu", r"C:\Program Files (x86)\qemu", r"C:\qemu"]:
+            full = f"{path}\\{exe}"
+            if os.path.exists(full):
+                return full
     return None
 
 def kill_all_qemu():
     """Kill any running QEMU instances"""
     try:
-        if sys.platform.startswith('win'):
-            subprocess.run(['taskkill', '/F', '/IM', 'qemu-system-riscv32.exe'], 
-                         capture_output=True)
-        else:
-            subprocess.run(['pkill', '-9', 'qemu-system-riscv32'], 
-                         capture_output=True)
+        cmd = ['taskkill', '/F', '/IM', 'qemu-system-riscv32.exe'] if sys.platform.startswith('win') else ['pkill', '-9', 'qemu-system-riscv32']
+        subprocess.run(cmd, capture_output=True)
     except:
         pass
 
@@ -84,8 +109,6 @@ def bg_reader(proc, q):
             if not byte:
                 break
             q.put(byte)
-    except:
-        pass
     finally:
         q.put(None)
 
@@ -94,19 +117,17 @@ _reader_queue = None
 _reader_thread = None
 
 def init_reader(proc):
-    """Start background stdout reader thread"""
+    """Start background stdout reader"""
     global _reader_queue, _reader_thread
     _reader_queue = queue.Queue()
     _reader_thread = threading.Thread(target=bg_reader, args=(proc, _reader_queue), daemon=True)
     _reader_thread.start()
-    time.sleep(0.1)
+    time.sleep(0.03)
 
-def wait_for(proc, pattern, timeout=5.0, clear_after=False):
-    """Wait for text pattern in bootloader output"""
+def wait_for(proc, pattern, timeout=5.0):
+    """Wait for pattern in bootloader output"""
     global _reader_queue
-    buf = b''
-    end = time.time() + timeout
-    pat = pattern.encode()
+    buf, end, pat = b'', time.time() + timeout, pattern.encode()
     
     while time.time() < end:
         try:
@@ -115,13 +136,6 @@ def wait_for(proc, pattern, timeout=5.0, clear_after=False):
                 return False, buf.decode('ascii', errors='ignore')
             buf += b
             if pat in buf:
-                if clear_after:
-                    time.sleep(0.05)
-                    while not _reader_queue.empty():
-                        try:
-                            _reader_queue.get_nowait()
-                        except queue.Empty:
-                            break
                 return True, buf.decode('ascii', errors='ignore')
         except queue.Empty:
             continue
@@ -129,43 +143,20 @@ def wait_for(proc, pattern, timeout=5.0, clear_after=False):
 
 def send(proc, data):
     """Send data to bootloader"""
-    if isinstance(data, str):
-        data = data.encode()
-    try:
-        proc.stdin.write(data)
-        proc.stdin.flush()
-        return True
-    except Exception as e:
-        print(f"Send error: {e}")
-        return False
+    data = data.encode() if isinstance(data, str) else data
+    proc.stdin.write(data)
+    proc.stdin.flush()
+    return True
 
-def send_slow(proc, data, delay=0.01):
-    """Send data byte-by-byte with delays for reliability"""
-    if isinstance(data, str):
-        data = data.encode()
-    try:
-        for byte in data:
-            proc.stdin.write(bytes([byte]))
-            proc.stdin.flush()
-            time.sleep(delay)
-        return True
-    except:
-        return False
-
-def make_firmware(size=512):
+def make_firmware(size=FIRMWARE_SIZE):
     """Generate test firmware with CRC"""
-    app = bytes(range(256)) * (size // 256 + 1)
-    app = app[:size]
-    crc = crc32(app) & 0xFFFFFFFF
-    return app, crc
+    app = (bytes(range(256)) * (size // 256 + 1))[:size]
+    return app, crc32(app) & 0xFFFFFFFF
 
 def test():
-    """Run complete bootloader validation"""
     kill_all_qemu()
     
-    print(f"\n{C.BOLD}{'='*60}{C.END}")
-    print(f"{C.BOLD}RISC-V Bootloader Validation Test{C.END}")
-    print(f"{C.BOLD}{'='*60}{C.END}\n")
+    print(f"\n{C.BOLD}RISC-V Bootloader Validation Test{C.END}\n")
     
     proc = None
     try:
@@ -180,12 +171,12 @@ def test():
         
         proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                stderr=subprocess.STDOUT, bufsize=0)
-        time.sleep(0.5)
+        time.sleep(0.2)
         ok("QEMU running")
         init_reader(proc)
         
         step(2, 7, "Waiting for bootloader")
-        success, resp = wait_for(proc, "BOOT?", timeout=5)
+        success, resp = wait_for(proc, "BOOT?", timeout=3)
         if not success:
             fail(f"No BOOT? prompt (got: {repr(resp[:50])})")
             return False
@@ -193,69 +184,53 @@ def test():
         
         step(3, 7, "Entering update mode")
         send(proc, 'u')
-        time.sleep(0.2)
-        success, resp = wait_for(proc, "OK", timeout=5, clear_after=True)
+        time.sleep(0.03)
+        success, resp = wait_for(proc, "OK", timeout=3)
         if not success:
             fail(f"Update mode failed")
-            info(f"Expected 'OK', got: {repr(resp)}")
             return False
         ok("Update mode active")
-        time.sleep(0.1)
         
         step(4, 7, "Generating test application")
-        firmware, fw_crc = make_firmware(512)
-        info(f"Size: {len(firmware)} bytes, CRC32: 0x{fw_crc:08X}")
+        firmware, fw_crc = make_firmware()
         ok("Test application ready")
         
         step(5, 7, "Uploading firmware")
-        send_cmd = f"SEND {len(firmware)}\n"
-        send_slow(proc, send_cmd, delay=0.005)
-        info(f"Sent: {repr(send_cmd)}")
-        time.sleep(0.1)
-        success, resp = wait_for(proc, "READY", timeout=10)
+        cmd = f"SEND {len(firmware)}\n"
+        for c in cmd:
+            send(proc, c)
+            time.sleep(0.001)
+        time.sleep(0.03)
+        success, resp = wait_for(proc, "READY", timeout=5)
         if not success:
             fail(f"Flash not ready")
-            info(f"Expected 'READY', got: {repr(resp[:100])}")
             return False
         ok("Flash erased, ready for data")
         
-        info("Uploading byte-by-byte...")
-        bytes_sent = 0
         for i, byte in enumerate(firmware):
             if not send(proc, bytes([byte])):
                 fail(f"Send failed at byte {i}")
                 return False
-            bytes_sent += 1
-            if i % 50 == 0:
-                progress(bytes_sent, len(firmware))
-            time.sleep(0.002)
-        progress(bytes_sent, len(firmware))
-        print()
+            if i % 40 == 0:
+                progress(i, len(firmware))
+            time.sleep(0.0003)
+        progress(len(firmware), len(firmware))
         ok(f"Uploaded {len(firmware)} bytes")
         
-        # Padding to flush Windows pipe buffer
-        info("Flushing pipe buffer...")
         proc.stdin.write(b'\x00' * 32)
         proc.stdin.flush()
         
-        wait_time = max(2.0, len(firmware) / 200.0)
-        info(f"Waiting {wait_time:.1f}s for CRC...")
-        time.sleep(wait_time)
-        if proc.poll() is not None:
-            fail(f"QEMU terminated (exit: {proc.returncode})")
-            return False
-        
         step(6, 7, "Validating CRC")
+        wait_duration = max(3.5, len(firmware) / 160.0)
+        animated_wait(wait_duration)
         success, resp = wait_for(proc, "CRC?", timeout=20)
         if not success:
             fail("CRC check timeout")
-            info(f"Expected 'CRC?', got: {repr(resp[:100])}")
             return False
         
-        success, resp = wait_for(proc, "OK", timeout=5)
+        success, resp = wait_for(proc, "OK", timeout=3)
         if not success:
             fail(f"CRC validation failed")
-            info(f"Expected 'OK', got: {repr(resp[:100])}")
             return False
         ok("CRC validation passed")
         
@@ -265,9 +240,7 @@ def test():
             ok("Reboot initiated")
         
         proc.terminate()
-        print(f"\n{C.GREEN}{C.BOLD}{'='*60}{C.END}")
-        print(f"{C.GREEN}{C.BOLD}✓ ALL TESTS PASSED{C.END}")
-        print(f"{C.GREEN}{C.BOLD}{'='*60}{C.END}\n")
+        print(f"\n{C.GREEN}{C.BOLD}✓ ALL TESTS PASSED{C.END}\n")
         return True
         
     except Exception as e:
