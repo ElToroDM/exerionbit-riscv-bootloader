@@ -82,3 +82,12 @@ ifeq ($(OS),Windows_NT)
 else
 	qemu-system-riscv32 -M virt -display none -serial stdio -bios none -kernel $(TARGET)
 endif
+
+# Run in QEMU with TCP serial for testing
+.PHONY: qemu-tcp
+qemu-tcp: $(TARGET)
+ifeq ($(OS),Windows_NT)
+	"C:\Program Files\qemu\qemu-system-riscv32.exe" -M virt -display none -serial tcp:localhost:10000,server,nowait -bios none -kernel $(TARGET)
+else
+	qemu-system-riscv32 -M virt -display none -serial tcp:localhost:10000,server,nowait -bios none -kernel $(TARGET)
+endif

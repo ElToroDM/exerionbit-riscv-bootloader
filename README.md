@@ -1,7 +1,6 @@
 # riscv-bootloader
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)&nbsp;&nbsp;
 [![Build Status](https://github.com/ElToroDM/riscv-bootloader/actions/workflows/build.yml/badge.svg?style=flat-square)](https://github.com/ElToroDM/riscv-bootloader/actions)&nbsp;&nbsp;
-[![Bare Metal](https://img.shields.io/badge/Bare%20Metal-Yes-critical?style=flat-square)](https://github.com/ElToroDM/riscv-bootloader)&nbsp;&nbsp;
 [![QEMU Validated](https://img.shields.io/badge/QEMU-Validated-success?style=flat-square&logo=qemu)](https://www.qemu.org/)&nbsp;&nbsp;
 [![Size ~6KB](https://img.shields.io/badge/Size-%3C6KB-blue?style=flat-square)](https://github.com/ElToroDM/riscv-bootloader)&nbsp;&nbsp;
 [![Custom Paid Ports](https://img.shields.io/badge/Custom-Paid%20Ports-brightgreen?style=flat-square)](https://github.com/ElToroDM/riscv-bootloader/issues)&nbsp;&nbsp;
@@ -23,6 +22,11 @@ Assembly entry • CRC32 validation • Portable HAL • QEMU reference for fast
 ```bash
 make all        # Compile bootloader
 make qemu       # Run in QEMU
+```
+
+**Run automated tests:**
+```bash
+python3 test_validator.py    # Protocol validation test
 ```
 
 **Expected output:** Bootloader waits for UART input, displays `BOOT?`
