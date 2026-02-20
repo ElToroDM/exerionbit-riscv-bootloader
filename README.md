@@ -11,6 +11,37 @@ Assembly entry • CRC32 validation • Portable HAL • QEMU reference for fast
 - Fast, minimal, open-source RISC-V bootloaders — production-ready in days, fully auditable, no proprietary lock-in.  
 - This QEMU-validated reference is your clean, portable starting point for custom ESP32-C3 or similar MCUs.
 
+## What this repository proves
+
+- Minimal, auditable RISC-V boot path with explicit assembly-to-C startup
+- Deterministic UART update baseline with CRC validation
+- Reproducible protocol behavior in QEMU for early architecture validation
+
+## What this repository does not prove
+
+- Production secure boot hardening internals
+- Production key lifecycle architecture
+- Anti-tamper internals for adversarial environments
+
+## Quick demo
+
+```bash
+make all
+make qemu
+python3 test_validator.py
+```
+
+## Known limits
+
+- Default target is QEMU virt, not a specific production board
+- Real hardware adaptation still requires board-specific HAL and memory map
+- Visual LED contract is not part of this QEMU baseline
+
+## Contact
+
+- Open an issue for scoped bootloader adaptation work
+- For alignment details, see `BOOT_SEQUENCE.md` and `VALIDATION_PROFILE.md`
+
 ## Quick Start
 
 **Prerequisites:**

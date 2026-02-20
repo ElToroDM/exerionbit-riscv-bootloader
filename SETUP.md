@@ -1,5 +1,15 @@
 # Setup Instructions
 
+## Contract documents
+
+- Boot sequence contract: `BOOT_SEQUENCE.md`
+- Validation execution profile: `VALIDATION_PROFILE.md`
+
+## Validation entry point
+
+- Protocol validator: `python3 test_validator.py`
+- Live visual runner (PowerShell): `./scripts/run-test-with-uart-tail.ps1`
+
 ## 🪟 Windows Setup (Recommended - Native, No WSL)
 
 > **⚠️ Important:** This is a **generic QEMU RISC-V project**, not ESP32-specific. Do NOT use the ESP-IDF extension - it's for real ESP32 hardware only.

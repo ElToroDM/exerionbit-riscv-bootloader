@@ -19,6 +19,12 @@ static void print_banner(void) {
     uart_puts("======================================\n");
 }
 
+static void emit_bl_evt(const char *token) {
+    uart_puts("BL_EVT:");
+    uart_puts(token);
+    uart_puts("\n");
+}
+
 /*
  * validate_app - Verify the firmware header at APP_BASE
  * Checks: magic number, plausibility of size, and CRC32 over payload
@@ -56,8 +62,11 @@ static int validate_app(void) {
  * - In a real loader you might: flush caches, disable interrupts, remap vectors
  */
 static void jump_to_app(void) {
+    emit_bl_evt("LOAD_APP");
+    emit_bl_evt("HANDOFF");
     uart_puts("Jumping to application...\n");
     uart_puts("APP_HANDOFF\n");
+    emit_bl_evt("HANDOFF_APP");
 
     /* The application entry point is right after the header */
     void (*app_entry)(void) = (void (*)(void))(APP_BASE + sizeof(fw_header_t));
@@ -84,6 +93,7 @@ static void jump_to_app(void) {
 static void uart_update(void) {
     uint32_t size = 0;
 
+    emit_bl_evt("UPDATE_CHECK");
     uart_puts("OK\n");
     
     /* Expecting "SEND " literal (very simple parser) */
@@ -107,6 +117,7 @@ static void uart_update(void) {
     /* Validate reported size against partition limits */
     if (size == 0 || size > APP_MAX_SIZE - sizeof(fw_header_t)) {
         uart_puts("ERR: SIZE\n");
+        emit_bl_evt("UPDATE_VERIFY_FAIL");
         return;
     }
 
@@ -120,6 +131,7 @@ static void uart_update(void) {
     uart_puts("ERASING...\n");
     if (flash_erase_app() != 0) {
         uart_puts("ERR: ERASE\n");
+        emit_bl_evt("UPDATE_VERIFY_FAIL");
         return;
     }
 
@@ -137,8 +149,11 @@ static void uart_update(void) {
     /* Write header last to mark a valid firmware image atomically */
     if (flash_write_header(&header) != 0) {
         uart_puts("ERR: HEADER\n");
+        emit_bl_evt("UPDATE_VERIFY_FAIL");
         return;
     }
+
+    emit_bl_evt("UPDATE_VERIFY_OK");
 
     uart_puts("CRC?\n");
     uart_puts("OK\n");
@@ -156,7 +171,9 @@ static void uart_update(void) {
 int main(void) {
     /* Initialize UART subsystem and show a human-friendly banner */
     uart_init();
+    emit_bl_evt("INIT");
     print_banner();
+    emit_bl_evt("HW_READY");
 
     uart_puts("BOOT?\n");
     
@@ -185,6 +202,7 @@ int main(void) {
         jump_to_app();
     } else {
         /* If no valid app, stay in recovery mode and allow updates */
+        emit_bl_evt("DECISION_RECOVERY");
         uart_puts("Recovery Loop: No valid app found. Press 'u' to update.\n");
         while(1) {
             if (uart_getc() == 'u') {
