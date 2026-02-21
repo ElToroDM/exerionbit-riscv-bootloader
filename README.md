@@ -37,6 +37,8 @@ python3 test_validator.py
 - Real hardware adaptation still requires board-specific HAL and memory map
 - Visual LED contract is not part of this QEMU baseline
 
+→ See [docs/KNOWN_LIMITS.md](docs/KNOWN_LIMITS.md) for the full list.
+
 ## Contact
 
 - Open an issue for scoped bootloader adaptation work
@@ -119,12 +121,18 @@ Let's build simple, dependable boot infrastructure — fast and 100% yours!
 ## Project Structure
 ```text
 riscv-bootloader/
-├── src/           # Core logic (OS-agnostic)
+├── src/           # Bootloader source (entry, drivers, update protocol)
 ├── include/       # Definitions & HAL interfaces
-├── linker/        # Linker scripts (memory.ld)
+├── linker/        # Linker scripts (memory.ld, test_app.ld)
 ├── boards/        # Board-specific HAL
 │   └── qemu_virt/ # Default: QEMU RISC-V Virt
+├── scripts/       # Validation/automation scripts
+├── docs/
+│   ├── evidence/  # Validation evidence by version (docs/evidence/<version>/)
+│   └── KNOWN_LIMITS.md
 ├── Makefile       # Build system
+├── BOOT_SEQUENCE.md
+├── VALIDATION_PROFILE.md
 └── README.md
 ```
 
