@@ -32,8 +32,8 @@
 
 ## Toolchain
 
-- Built and tested with `riscv32-unknown-elf-gcc`. Other RISC-V GCC variants
-  (e.g. `riscv-none-elf-gcc`) may require minor Makefile adjustments.
+- Built and tested with `riscv-none-elf-gcc` (xPack). Other RISC-V GCC variants
+  (e.g. `riscv32-unknown-elf-gcc`) may require minor Makefile adjustments.
 - Requires QEMU system emulation (`qemu-system-riscv32`) for default validation.
 
 ## Test application

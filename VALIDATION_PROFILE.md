@@ -21,8 +21,9 @@ Purpose: define canonical validation defaults and PASS/FAIL criteria for this re
 Required:
 
 1. `BL_EVT:LOAD_APP`
-2. `BL_EVT:HANDOFF_APP`
-3. `APP_EVT:START`
+2. `BL_EVT:HANDOFF`
+3. `BL_EVT:HANDOFF_APP`
+4. `APP_EVT:START`
 
 ### T2 Recovery path
 Required:

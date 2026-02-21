@@ -86,19 +86,7 @@ python3 test_validator.py    # Protocol validation test
 - **Proven in QEMU virt**: Validated in QEMU virt and designed bottom-up to migrate to real hardware without surprises.
 - **Full ownership**: Complete source delivered so you can adapt, audit, and ship with confidence.
 
-Perfect for:
-- Hardware startups prototyping IoT devices
-- Small OEMs with custom boards needing controlled boot behavior
-- Makers & labs moving from Arduino to production-grade firmware
-- Consultancies building complete firmware stacks
-
-Perfect base for your next ESP32-C3 product — from prototype to small production runs.
-
-## Why Choose This as Your Base?
-
-- Ready for production: minimal, auditable, and portable code you can trust.
-- Accelerates time-to-market: small, focused codebase reduces integration overhead.
-- Low-risk migration: QEMU-validated path from prototype to hardware.
+Suited for small hardware teams, early-stage OEMs, and boutique engineering consultancies building custom boards with controlled boot requirements.
 
 ## Features
 
@@ -115,8 +103,6 @@ Perfect base for your next ESP32-C3 product — from prototype to small producti
 - GPIO/timeout recovery trigger
 - LED signaling (e.g., Waveshare ESP32-C3 Zero RGB)
 - Fast delivery: 1–3 days with full source and total ownership
-
-Let's build simple, dependable boot infrastructure — fast and 100% yours!
 
 ## Project Structure
 ```text
@@ -163,7 +149,7 @@ See `linker/memory.ld` and `include/boot.h` for details.
 - Optional: GPIO/LED init for signaling
 - Adjust `linker/memory.ld` for real flash/RAM map
 - Update `Makefile` for new target
-- Build & flash with `esptool.py` / OpenOCD
+- Build & flash with your target's flashing tool (OpenOCD, JLink, or equivalent)
 
 ## Status
 
