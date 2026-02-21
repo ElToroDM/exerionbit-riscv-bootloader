@@ -105,7 +105,7 @@ Perfect base for your next ESP32-C3 product — from prototype to small producti
 - Reliable bare-metal startup (assembly `_start` with stack/BSS init)
 - Human-readable UART update protocol (115200 8N1)
 - CRC32 + magic number + size firmware validation
-- Compact footprint (default ~64 KB for bootloader)
+- Compact footprint (default ~3 KB for bootloader)
 - Clean handoff to application
 - Portable HAL for easy porting
 
