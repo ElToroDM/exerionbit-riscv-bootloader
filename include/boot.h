@@ -18,6 +18,8 @@ typedef struct {
     uint32_t version;       /* Firmware version */
 } fw_header_t;
 
+#define APP_PAYLOAD_MAX_SIZE (APP_MAX_SIZE - sizeof(fw_header_t))
+
 /* =============================================================================
  * HAL Layer 1: Platform-Specific (implemented in boards/<board>/platform.c)
  * ============================================================================= */
@@ -152,6 +154,46 @@ int flash_erase_app(void);
  * Returns: 0 on success, -1 on error
  */
 int flash_write_header(const fw_header_t *header);
+
+/**
+ * app_image_validate - Validate app header and payload CRC at APP_BASE
+ *
+ * Returns: 0 when image is valid, -1 on validation failure
+ */
+int app_image_validate(void);
+
+/**
+ * app_image_handoff - Emit handoff tokens and jump to app entry
+ */
+void app_image_handoff(void);
+
+/**
+ * app_image_payload_size_valid - Check payload size against app partition bounds
+ * @payload_size: Number of firmware payload bytes
+ *
+ * Returns: 1 if valid, 0 if invalid
+ */
+int app_image_payload_size_valid(uint32_t payload_size);
+
+/**
+ * bl_evt - Emit canonical machine-parsable bootloader token
+ * @token: Token without BL_EVT prefix
+ */
+void bl_evt(const char *token);
+
+/**
+ * bl_evt_u32 - Emit canonical token with uint32 value
+ * @token: Token without BL_EVT prefix
+ * @value: Value field emitted after second colon
+ */
+void bl_evt_u32(const char *token, uint32_t value);
+
+/**
+ * update_mode_run - Execute UART update protocol baseline
+ *
+ * Returns: 0 when update committed successfully, -1 on protocol/update failure
+ */
+int update_mode_run(void);
 
 /* =============================================================================
  * Utility Functions

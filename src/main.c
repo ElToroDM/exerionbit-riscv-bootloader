@@ -1,16 +1,5 @@
 #include "boot.h"
 
-/*
- * Professional RISC-V UART Bootloader - Main Logic
- *
- * Responsibilities:
- * - Present a simple UART-based update protocol
- * - Validate firmware image (magic, size, CRC)
- * - Perform flash erase/write via HAL and jump to the application
- *
- * Design goals: small, auditable, and explicit behavior for reviews
- */
-
 static void print_banner(void) {
     /* Small human-friendly banner printed at boot */
     uart_puts("======================================\n");
@@ -19,161 +8,11 @@ static void print_banner(void) {
     uart_puts("======================================\n");
 }
 
-static void emit_bl_evt(const char *token) {
-    uart_puts("BL_EVT:");
-    uart_puts(token);
-    uart_puts("\n");
-}
-
-/*
- * validate_app - Verify the firmware header at APP_BASE
- * Checks: magic number, plausibility of size, and CRC32 over payload
- * Returns 0 on success, -1 on failure
- */
-static int validate_app(void) {
-    const fw_header_t *header = (const fw_header_t *)APP_BASE;
-    
-    /* Basic header sanity checks */
-    if (header->magic != BOOT_MAGIC) {
-        uart_puts("Error: Invalid magic number\n");
-        return -1;
-    }
-    
-    /* Ensure reported size fits within the application partition */
-    if (header->size == 0 || header->size > APP_MAX_SIZE - sizeof(fw_header_t)) {
-        uart_puts("Error: Invalid firmware size\n");
-        return -1;
-    }
-    
-    /* Compute CRC and compare with header CRC */
-    uint32_t calc_crc = crc32((const uint8_t *)(APP_BASE + sizeof(fw_header_t)), header->size);
-    if (calc_crc != header->crc32) {
-        uart_puts("Error: CRC mismatch\n");
-        return -1;
-    }
-    
-    return 0;
-}
-
-/*
- * jump_to_app - Transfer control to application entry point
- * Notes:
- * - The application entry is placed directly after the fw_header_t
- * - In a real loader you might: flush caches, disable interrupts, remap vectors
- */
-static void jump_to_app(void) {
-    emit_bl_evt("LOAD_APP");
-    emit_bl_evt("HANDOFF");
-    uart_puts("Jumping to application...\n");
-    uart_puts("APP_HANDOFF\n");
-    emit_bl_evt("HANDOFF_APP");
-
-    /* The application entry point is right after the header */
-    void (*app_entry)(void) = (void (*)(void))(APP_BASE + sizeof(fw_header_t));
-    
-    /* Basic cleanup before jump (kept minimal and explicit)
-     * For safety you'd typically: disable IRQs, turn off peripherals, etc.
-     */
-    app_entry();
-}
-
-/*
- * uart_update - Implements the simple UART update protocol
- * Protocol (human-friendly):
- *  - Bootloader sends: OK
- *  - Host sends: SEND <size>\n
- *  - Bootloader: READY
- *  - Host sends raw binary of <size> bytes
- *  - Bootloader computes CRC, writes header atomically, and reboots
- *
- * Note: For QEMU this implementation writes payload directly to memory at
- * APP_BASE (simplified). On real hardware, writes must go through flash APIs
- * and respect page/sector alignment and write/erase constraints.
- */
-static void uart_update(void) {
-    uint32_t size = 0;
-
-    emit_bl_evt("APP_CRC_CHECK");
-    uart_puts("OK\n");
-    
-    /* Expecting "SEND " literal (very simple parser) */
-    const char *cmd = "SEND ";
-    for (int j = 0; j < 5; j++) {
-        if (uart_getc() != cmd[j]) {
-            uart_puts("ERR: CMD\n");
-            return;
-        }
-    }
-    
-    /* Read decimal size until newline */
-    while (1) {
-        char c = uart_getc();
-        if (c == '\r' || c == '\n') break;
-        if (c >= '0' && c <= '9') {
-            size = size * 10 + (c - '0');
-        }
-    }
-    
-    /* Validate reported size against partition limits */
-    if (size == 0 || size > APP_MAX_SIZE - sizeof(fw_header_t)) {
-        uart_puts("ERR: SIZE\n");
-        emit_bl_evt("APP_CRC_FAIL");
-        return;
-    }
-
-    /* Prepare header (header written last for atomic update) */
-    fw_header_t header;
-    header.magic = BOOT_MAGIC;
-    header.size = size;
-    header.version = 1;
-
-    /* Erase application partition via HAL (may be time-consuming) */
-    uart_puts("ERASING...\n");
-    if (flash_erase_app() != 0) {
-        uart_puts("ERR: ERASE\n");
-        emit_bl_evt("APP_CRC_FAIL");
-        return;
-    }
-
-    /* Receive payload. QEMU: writes directly to memory for simplicity. */
-    uart_puts("READY\n");
-    uint8_t *dest = (uint8_t *)(APP_BASE + sizeof(fw_header_t));
-    for (uint32_t j = 0; j < size; j++) {
-        /* Blocking read per byte; keep it simple and deterministic */
-        dest[j] = (uint8_t)uart_getc();
-    }
-
-    /* Compute CRC over received payload and store into header */
-    header.crc32 = crc32((const uint8_t *)(APP_BASE + sizeof(fw_header_t)), size);
-    
-    /* Write header last to mark a valid firmware image atomically */
-    if (flash_write_header(&header) != 0) {
-        uart_puts("ERR: HEADER\n");
-        emit_bl_evt("APP_CRC_FAIL");
-        return;
-    }
-
-    emit_bl_evt("APP_CRC_OK");
-
-    uart_puts("CRC?\n");
-    uart_puts("OK\n");
-    uart_puts("REBOOT\n");
-
-#if PLATFORM_DIRECT_BOOT_AFTER_UPDATE
-    /* QEMU demo flow: jump directly so UART can show app output immediately. */
-    jump_to_app();
-#else
-    /* Perform system reset using platform abstraction */
-    platform_reset();
-#endif
-}
-
 int main(void) {
-    /* Initialize UART subsystem and show a human-friendly banner */
     uart_init();
-    emit_bl_evt("INIT");
+    bl_evt("INIT");
     print_banner();
-    emit_bl_evt("HW_READY");
+    bl_evt("HW_READY");
 
     uart_puts("BOOT?\n");
     
@@ -186,31 +25,38 @@ int main(void) {
         }
 
         if (choice == 'u' || choice == 'U') {
-            /* Enter firmware update mode */
-            uart_update();
+            if (update_mode_run() == 0) {
+                return 0;
+            }
+
+            bl_evt("DECISION_RECOVERY");
+            uart_puts("Recovery Loop: Update failed. Press 'u' to retry.\n");
+            while (1) {
+                char retry = uart_getc();
+                if (retry == 'u' || retry == 'U') {
+                    update_mode_run();
+                }
+            }
         } else if (choice == '\r' || choice == '\n') {
-            /* Treat Enter as a request to boot the app */
             break;
         } else {
-            /* Any other key falls through to attempt boot */
             break;
         }
     }
 
-    /* Validate the on-flash application and jump if valid */
-    emit_bl_evt("DECISION_NORMAL");
-    emit_bl_evt("APP_CRC_CHECK");
-    if (validate_app() == 0) {
-        emit_bl_evt("APP_CRC_OK");
-        jump_to_app();
+    bl_evt("DECISION_NORMAL");
+    bl_evt("APP_CRC_CHECK");
+    if (app_image_validate() == 0) {
+        bl_evt("APP_CRC_OK");
+        app_image_handoff();
     } else {
-        /* If no valid app, stay in recovery mode and allow updates */
-        emit_bl_evt("APP_CRC_FAIL");
-        emit_bl_evt("DECISION_RECOVERY");
+        bl_evt("APP_CRC_FAIL");
+        bl_evt("DECISION_RECOVERY");
         uart_puts("Recovery Loop: No valid app found. Press 'u' to update.\n");
         while(1) {
-            if (uart_getc() == 'u') {
-                uart_update();
+            char recovery_cmd = uart_getc();
+            if (recovery_cmd == 'u' || recovery_cmd == 'U') {
+                update_mode_run();
             }
         }
     }

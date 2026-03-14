@@ -119,6 +119,8 @@ static inline uint32_t read_csr_mhartid(void) {
 }
 
 void app_main(void) {
+    uart_puts_raw("APP_EVT:START\n");
+    uart_puts_raw("APP_EVT:BOOTLOADER_HANDOFF_OK\n");
     uart_puts_raw("APP_BOOT\n");
     uart_puts_raw("========================================\n");
     uart_puts_raw("   Test Application Running\n");

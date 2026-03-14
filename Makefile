@@ -29,6 +29,9 @@ LDFLAGS = -T $(LNK_DIR)/memory.ld -nostdlib -nostartfiles
 # Source Files
 SRCS = $(SRC_DIR)/start.S \
        $(SRC_DIR)/main.c \
+	$(SRC_DIR)/boot_log.c \
+	$(SRC_DIR)/app_image.c \
+	$(SRC_DIR)/update_mode.c \
        $(SRC_DIR)/uart.c \
        $(SRC_DIR)/flash.c \
        $(SRC_DIR)/crc32.c \

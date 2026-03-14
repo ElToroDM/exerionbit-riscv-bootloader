@@ -13,7 +13,7 @@ Purpose: define canonical validation defaults and PASS/FAIL criteria for this re
 
 - Bootloader tokens: `BL_EVT:<TOKEN>[:VALUE]`
 - Application tokens: `APP_EVT:<TOKEN>[:VALUE]`
-- Transitional human-readable protocol messages may coexist during migration
+- Transitional human-readable protocol messages may coexist as compatibility output
 
 ## 3. Minimum pass criteria
 
@@ -27,6 +27,7 @@ Required:
 5. `BL_EVT:HANDOFF`
 6. `BL_EVT:HANDOFF_APP`
 7. `APP_EVT:START`
+8. `APP_EVT:BOOTLOADER_HANDOFF_OK`
 
 ### T2 Recovery path
 Required:
@@ -34,13 +35,23 @@ Required:
 - `BL_EVT:DECISION_RECOVERY`
 - no application handoff while invalid image condition persists
 
-### T3 Update integrity pass
+### T3 Update protocol baseline
+Required:
+
+1. `BL_EVT:DECISION_UPDATE`
+2. `BL_EVT:READY_FOR_UPDATE`
+3. `BL_EVT:READY_FOR_CHUNK`
+4. `BL_EVT:CHUNK_OK:0`
+5. `BL_EVT:UPDATE_SESSION_END`
+6. `BL_EVT:APP_CRC_OK`
+
+### T4 Update integrity pass
 Required:
 
 - `BL_EVT:APP_CRC_CHECK`
 - `BL_EVT:APP_CRC_OK`
 
-### T4 Update integrity fail
+### T5 Update integrity fail
 Required:
 
 - `BL_EVT:APP_CRC_FAIL`

@@ -5,11 +5,7 @@
 [![Size ~3KB](https://img.shields.io/badge/Size-%3C3KB-blue?style=flat-square)](https://github.com/ElToroDM/exerionbit-riscv-bootloader)&nbsp;&nbsp;
 [![Custom Paid Ports](https://img.shields.io/badge/Custom-Paid%20Ports-brightgreen?style=flat-square)](https://github.com/ElToroDM/exerionbit-riscv-bootloader/issues)&nbsp;&nbsp;
 
-**Minimal bare-metal RISC-V UART bootloader**  
-Assembly entry • CRC32 validation • Portable HAL • QEMU reference for fast real-hardware ports (ESP32-C3 ready)
-
-- Fast, minimal, open-source RISC-V bootloaders — production-ready in days, fully auditable, no proprietary lock-in.  
-- This QEMU-validated reference is your clean, portable starting point for custom ESP32-C3 or similar MCUs.
+Minimal bare-metal RISC-V UART bootloader for QEMU virt baseline validation.
 
 ## What this repository proves
 
@@ -31,6 +27,17 @@ make qemu
 python3 test_validator.py
 ```
 
+Expected canonical tokens (normal path, ordered):
+
+- `BL_EVT:DECISION_NORMAL`
+- `BL_EVT:APP_CRC_CHECK`
+- `BL_EVT:APP_CRC_OK`
+- `BL_EVT:LOAD_APP`
+- `BL_EVT:HANDOFF`
+- `BL_EVT:HANDOFF_APP`
+- `APP_EVT:START`
+- `APP_EVT:BOOTLOADER_HANDOFF_OK`
+
 ## Known limits
 
 - Default target is QEMU virt, not a specific production board
@@ -42,7 +49,7 @@ python3 test_validator.py
 ## Contact
 
 - Open an issue for scoped bootloader adaptation work
-- For alignment details, see `BOOT_SEQUENCE.md` and `VALIDATION_PROFILE.md`
+- See `BOOT_SEQUENCE.md` and `VALIDATION_PROFILE.md` for canonical token contract and validation criteria
 
 ## Quick Start
 
