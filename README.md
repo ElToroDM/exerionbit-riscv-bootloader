@@ -5,7 +5,14 @@
 [![Size ~3KB](https://img.shields.io/badge/Size-%3C3KB-blue?style=flat-square)](https://github.com/ElToroDM/exerionbit-riscv-bootloader)&nbsp;&nbsp;
 [![Custom Paid Ports](https://img.shields.io/badge/Custom-Paid%20Ports-brightgreen?style=flat-square)](https://github.com/ElToroDM/exerionbit-riscv-bootloader/issues)&nbsp;&nbsp;
 
-Minimal bare-metal RISC-V UART bootloader for QEMU virt baseline validation.
+**Minimal bare-metal RISC-V UART bootloader**  
+Assembly entry • CRC32 validation • Portable HAL • QEMU reference for fast real-hardware ports (ESP32-C3 ready)
+
+Boot flow aligned with BRS-B principles (RISC-V ecosystem, ratified 2025): minimal, standardized handoff, no heavy UEFI/ACPI stack.
+Scope note: this repository demonstrates baseline alignment, not full production hardening or full standards conformance.
+
+- Fast, minimal, open-source RISC-V bootloaders — production-ready in days, fully auditable, no proprietary lock-in.  
+- This QEMU-validated reference is your clean, portable starting point for custom ESP32-C3 or similar MCUs.
 
 ## What this repository proves
 
@@ -27,17 +34,6 @@ make qemu
 python3 test_validator.py
 ```
 
-Expected canonical tokens (normal path, ordered):
-
-- `BL_EVT:DECISION_NORMAL`
-- `BL_EVT:APP_CRC_CHECK`
-- `BL_EVT:APP_CRC_OK`
-- `BL_EVT:LOAD_APP`
-- `BL_EVT:HANDOFF`
-- `BL_EVT:HANDOFF_APP`
-- `APP_EVT:START`
-- `APP_EVT:BOOTLOADER_HANDOFF_OK`
-
 ## Known limits
 
 - Default target is QEMU virt, not a specific production board
@@ -49,7 +45,21 @@ Expected canonical tokens (normal path, ordered):
 ## Contact
 
 - Open an issue for scoped bootloader adaptation work
-- See `BOOT_SEQUENCE.md` and `VALIDATION_PROFILE.md` for canonical token contract and validation criteria
+- For alignment details, see `BOOT_SEQUENCE.md` and `VALIDATION_PROFILE.md`
+
+## Need / Scope / Timeline
+
+| Need | Typical timeline | Includes | Evidence artifact | Contact |
+|---|---|---|---|---|
+| UART/serial update baseline | 1-2 days | Deterministic protocol + CRC32 gate + logs | `docs/evidence/<release>/logs/qemu_update_protocol.log` | email |
+| Factory/recovery baseline | 3-5 days | Boot mode decision path + diagnostics contract | `docs/evidence/<release>/expected-vs-observed.md` | email |
+| Lightweight secure baseline | 5-10 days | Integrity/signature baseline mapping + BRS-B principles note | `docs/evidence/<release>/compliance-baseline.md` | email |
+
+## Standards alignment (baseline)
+
+- BRS-B principles alignment: minimal boot flow, explicit handoff contract, no heavy UEFI/ACPI dependency.
+- Scope guardrail: this public repository is not a full BRS/BRS-B conformance claim.
+- Reference: RISC-V BRS ratification (2025), last checked 2026-03-18.
 
 ## Quick Start
 
