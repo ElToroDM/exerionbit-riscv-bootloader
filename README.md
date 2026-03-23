@@ -5,14 +5,16 @@
 [![Size ~3KB](https://img.shields.io/badge/Size-%3C3KB-blue?style=flat-square)](https://github.com/ElToroDM/exerionbit-riscv-bootloader)&nbsp;&nbsp;
 [![Custom Paid Ports](https://img.shields.io/badge/Custom-Paid%20Ports-brightgreen?style=flat-square)](https://github.com/ElToroDM/exerionbit-riscv-bootloader/issues)&nbsp;&nbsp;
 
-**Minimal bare-metal RISC-V UART bootloader**  
-Assembly entry • CRC32 validation • Portable HAL • QEMU reference for fast real-hardware ports (ESP32-C3 ready)
+**Portable bare-metal RISC-V UART bootloader reference**  
+Assembly entry • CRC32 validation • Portable HAL • QEMU reference for architecture review and fast real-hardware ports
 
 Boot flow aligned with BRS-B principles (RISC-V ecosystem, ratified 2025): minimal, standardized handoff, no heavy UEFI/ACPI stack.
 Scope note: this repository demonstrates baseline alignment, not full production hardening or full standards conformance.
 
-- Fast, minimal, open-source RISC-V bootloaders — production-ready in days, fully auditable, no proprietary lock-in.  
-- This QEMU-validated reference is your clean, portable starting point for custom ESP32-C3 or similar MCUs.
+- Fast, minimal, open-source RISC-V bootloader reference with full auditability and no proprietary lock-in.  
+- This QEMU-validated repository supports architecture review, early port scoping, and de-risking before board-specific adaptation work.
+
+This repository provides a portable QEMU-based RISC-V reference for teams that want to inspect the boot path, validation behavior, and porting assumptions before moving to board-specific implementation.
 
 ## What this repository proves
 
@@ -45,15 +47,16 @@ python3 test_validator.py
 ## Contact
 
 - Open an issue for scoped bootloader adaptation work
+- Email: `exerionbit.diego@gmail.com`
 - For alignment details, see `BOOT_SEQUENCE.md` and `VALIDATION_PROFILE.md`
 
 ## Need / Scope / Timeline
 
 | Need | Typical timeline | Includes | Evidence artifact | Contact |
 |---|---|---|---|---|
-| UART/serial update baseline | 1-2 days | Deterministic protocol + CRC32 gate + logs | `docs/evidence/<release>/logs/qemu_update_protocol.log` | email |
-| Factory/recovery baseline | 3-5 days | Boot mode decision path + diagnostics contract | `docs/evidence/<release>/expected-vs-observed.md` | email |
-| Lightweight secure baseline | 5-10 days | Integrity/signature baseline mapping + BRS-B principles note | `docs/evidence/<release>/compliance-baseline.md` | email |
+| Architecture review baseline | 1-2 days | Deterministic protocol + CRC32 gate + logs | `docs/evidence/<release>/logs/qemu_update_protocol.log` | exerionbit.diego@gmail.com |
+| Board-port de-risking baseline | 3-5 days | Boot decision path + diagnostics contract + porting notes | `docs/evidence/<release>/expected-vs-observed.md` | exerionbit.diego@gmail.com |
+| Lightweight secure baseline | 5-10 days | Integrity/signature baseline mapping + BRS-B principles note | `docs/evidence/<release>/compliance-baseline.md` | exerionbit.diego@gmail.com |
 
 ## Standards alignment (baseline)
 
@@ -114,12 +117,12 @@ Suited for small hardware teams, early-stage OEMs, and boutique engineering cons
 - Clean handoff to application
 - Portable HAL for easy porting
 
-## Need a Custom Port?
+## Need a Scoped Port?
 
-- UART/USB update for your specific board
+- Board-specific UART/USB update path
 - GPIO/timeout recovery trigger
-- LED signaling (e.g., Waveshare ESP32-C3 Zero RGB)
-- Fast delivery: 1–3 days with full source and total ownership
+- LED signaling and diagnostics contract
+- Fast delivery once board assumptions and scope are explicit
 
 ## Project Structure
 ```text
