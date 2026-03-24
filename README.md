@@ -61,7 +61,7 @@ python3 test_validator.py
 ## Standards alignment (baseline)
 
 - BRS-B principles alignment: minimal boot flow, explicit handoff contract, no heavy UEFI/ACPI dependency.
-- Scope guardrail: this public repository is not a full BRS/BRS-B conformance claim.
+- Scope note: this repository is not a full BRS/BRS-B conformance claim.
 - Reference: RISC-V BRS ratification (2025), last checked 2026-03-18.
 
 ## Quick Start

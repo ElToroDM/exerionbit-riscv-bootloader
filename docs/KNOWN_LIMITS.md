@@ -29,10 +29,9 @@
 - CRC32 provides basic integrity checking only; it is not a cryptographic primitive.
 - Production hardening (signing, anti-tamper, key provisioning) is out of scope for
   this proof asset.
-- This public baseline does **not** include production fault-injection hardening.
-- This public baseline does **not** include production key provisioning.
-- Advanced hardening and key lifecycle architecture are available only in private,
-  scoped engagements.
+- This repository does **not** include production fault-injection hardening.
+- This repository does **not** include production key provisioning.
+- Advanced hardening and key lifecycle architecture belong to separate project scopes.
 
 ## Toolchain
 
