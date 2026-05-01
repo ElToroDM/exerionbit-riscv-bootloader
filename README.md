@@ -11,12 +11,12 @@ Assembly entry • CRC32 validation • Portable HAL • QEMU reference for arch
 Boot flow aligned with BRS-B principles (RISC-V ecosystem, ratified 2025): minimal, standardized handoff, no heavy UEFI/ACPI stack.
 Scope note: this repository demonstrates baseline alignment, not full production hardening or full standards conformance.
 
-- This is the supporting reference architecture behind ExerionBit's public ESP32-C3 proof, not a competing front door.  
-- Use it to inspect the boot path, review portability assumptions, and reduce risk before board-specific adaptation work.
+- This repository is the RISC-V reference used to review startup flow and portability assumptions alongside the ESP32-C3 hardware proof.  
+- Use it to inspect the boot path, review portability assumptions, and reduce risk after a concrete board-specific boot problem is already clear.
 
 This repository provides a portable QEMU-based RISC-V reference for teams that want to inspect the boot path, validation behavior, and porting assumptions before moving to board-specific implementation.
 
-## Best fit
+## When this helps most
 
 - Teams that want architecture review before custom-board work starts
 - Buyers whose main question is portability, boot-path clarity, or de-risking assumptions
@@ -25,11 +25,11 @@ This repository provides a portable QEMU-based RISC-V reference for teams that w
 ## Commercial role
 
 Use this repository for:
-- architecture de-risking review before a board-specific scope starts
+- architecture de-risking review after a concrete board-specific scope is already visible
 - auditability discussions around explicit boot-path behavior
-- clarifying what should be adapted before asking for First-Board Bring-Up or Verified Boot Gate work
+- clarifying what should be adapted before asking for First-Board Bring-Up, Factory and Field Recovery, or Verified Boot Gate work
 
-If the immediate need is ESP32-C3 bring-up, start with the ESP32-C3 repository because it is the strongest public proof today. Other ESP32 RISC-V chips can still be handled as scoped follow-on work when requirements and validation targets are explicit.
+If the immediate need is a blocked ESP32-C3 board or a bounded recovery path, start with the ESP32-C3 repository because it is the strongest hardware proof today. Other ESP32 RISC-V chips can still be handled separately when requirements and validation targets are explicit.
 
 ## What this repository proves
 
@@ -57,19 +57,19 @@ python3 test_validator.py
 |---|---|---|---|
 | Architecture de-risking review | 1-2 days | Deterministic protocol + CRC32 gate + logs | `docs/evidence/<release>/logs/qemu_update_protocol.log` |
 | First-Board Bring-Up preparation | 3-5 days | Boot decision path + diagnostics contract + porting notes | `docs/evidence/<release>/expected-vs-observed.md` |
-| Verified Boot Gate preparation | 5-10 days | Integrity/signature baseline mapping + BRS-B principles note | `docs/evidence/<release>/compliance-baseline.md` |
+| Verified Boot Gate preparation | 5-10 days | Integrity/signature baseline mapping + BRS-B principles note after the verification need is already explicit | `docs/evidence/<release>/compliance-baseline.md` |
 
 ## Start a scoped project
 
-Use this repository to qualify architecture questions before board-specific implementation starts.
+Use this repository to qualify architecture questions once the boot-path problem is already defined.
 
 To request a scoping pass, email `exerionbit.diego@gmail.com` with:
 - target SoC or board
 - current boot blocker
-- desired outcome: `Architecture de-risking review`, `First-Board Bring-Up`, or `Verified Boot Gate`
+- desired outcome: `Architecture de-risking review`, `First-Board Bring-Up`, `Factory and Field Recovery`, or `Verified Boot Gate`
 - expected timeline
 
-If the need is immediate ESP32-C3 delivery, start with the ESP32-C3 repository and use this reference as supporting architecture evidence.
+If the need is immediate ESP32-C3 bring-up or recovery delivery, start with the ESP32-C3 repository and use this reference as a supporting RISC-V review path.
 Web entry point: `https://www.exerionbit.com`
 
 ## Known limits
@@ -77,7 +77,7 @@ Web entry point: `https://www.exerionbit.com`
 - Default target is QEMU virt, not a specific production board
 - Real hardware adaptation still requires board-specific HAL and memory map
 - Visual LED contract is not part of this QEMU baseline
-- This repository supports broader RISC-V review, but it does not replace the ESP32-C3 real-hardware proof surface
+- This repository supports broader RISC-V review, but it does not replace the ESP32-C3 real-hardware proof repository
 
 → See [docs/KNOWN_LIMITS.md](docs/KNOWN_LIMITS.md) for the full list.
 
@@ -145,7 +145,7 @@ Best used by small hardware teams, early-stage OEMs, and boutique engineering co
 - Architecture de-risking review before board-specific implementation
 - Preparation work before First-Board Bring-Up starts on a real target
 - Recovery trigger and diagnostics contract decisions before Factory and Field Recovery work
-- Verification-path discussion before a scoped Verified Boot Gate engagement
+- Verification-path discussion before a scoped Verified Boot Gate engagement when the extra gate is already justified
 - Fast delivery once board assumptions and scope are explicit
 
 ## Memory Layout (QEMU virt default – adjustable)
@@ -190,5 +190,5 @@ See `linker/memory.ld` and `include/boot.h` for details.
 - Request scoped architecture review or board-port de-risking work
 - Email: `exerionbit.diego@gmail.com`
 - Web: `https://www.exerionbit.com`
-- For immediate ESP32-C3 `First-Board Bring-Up`, use the public ESP32-C3 repository as the main proof surface
+- For immediate ESP32-C3 `First-Board Bring-Up` or `Factory and Field Recovery`, use the ESP32-C3 repository as the main public reference
 - For alignment details, see `BOOT_SEQUENCE.md` and `VALIDATION_PROFILE.md`
