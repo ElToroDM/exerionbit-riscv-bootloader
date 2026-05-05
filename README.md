@@ -16,6 +16,8 @@ Scope note: this repository demonstrates baseline alignment, not full production
 
 This repository provides a portable QEMU-based RISC-V reference for teams that want to inspect the boot path, validation behavior, and porting assumptions before moving to board-specific implementation.
 
+When a board-specific boot blocker is already clear but the architecture path still needs review, this reference helps de-risk startup flow, validation behavior, and portability assumptions before board-specific implementation.
+
 ## When this helps most
 
 - Teams that want architecture review before custom-board work starts
@@ -62,6 +64,8 @@ python3 test_validator.py
 ## Start a scoped project
 
 Use this repository to qualify architecture questions once the boot-path problem is already defined.
+
+Send four inputs. Get a short, scoped reply with the best-fit architecture review path for your board.
 
 To request a scoping pass, email `exerionbit.diego@gmail.com` with:
 - target SoC or board
